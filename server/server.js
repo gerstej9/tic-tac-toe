@@ -49,25 +49,35 @@ let startingBoard = {
 const winners = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 4, 7],
 [2, 5, 8], [3, 6, 9], [1, 5, 9], [3, 5, 7]];
 
+
+//Function sourced from Masterjs tutorials, reference in README.md
+function arrayEquals(a, b) {
+  return Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((val, index) => val === b[index]);
+}
+
 function verifyWin(board) {
   let xArray = [];
   let oArray = [];
   for (let key in board) {
     if (board[key] === 'X') {
-      xArray.push(key);
+      xArray.push(Number(key));
     }
     if (board[key] === 'O') {
-      oArray.push(key);
+      oArray.push(Number(key));
     }
   }
   for (let i = 0; i < winners.length; i++) {
-    if (winners[i] === xArray) {
+    if (arrayEquals(winners[i], xArray)) {
       return 'X';
     }
-    else if (winners[i] === oArray) {
+    else if (arrayEquals(winners[i], oArray)) {
       return 'O';
     }
   }
+
   return null;
 }
 
@@ -110,57 +120,21 @@ game.on('connection', (socket) => {
 
     } else {
       board[payload.move] = payload.player;
-      console.log(board[payload.move]);
+      let potentialWinner = verifyWin(board);
+      if (potentialWinner === 'X' || potentialWinner === 'O') {
 
-      if (verifyWin(board) === 'X' || verifyWin(board) === 'O') {
-
-        let winner = verifyWin(board);
-        let winnerPayload = { displayBoard: displayBoard(board), message: `Player ${winner} wins!` }
+        let winnerPayload = { displayBoard: displayBoard(board), message: `Player ${potentialWinner} wins!` }
 
         game.emit('gameover', winnerPayload)
+      }else{
+        let outboundPayload = { displayBoard: displayBoard(board), message: 'Nice move! Heres the current board. Awaiting opponent move.' }
+        socket.emit('goodmove', outboundPayload)
+  
+        let nextMovePayload = { displayBoard: displayBoard(board), message: `Player ${payload.player} has moved. Please enter a number between 1 and 9 to place your marker on the board. ` }
+        socket.broadcast.emit('nextmove', nextMovePayload);
       }
-
-      let outboundPayload = { displayBoard: displayBoard(board), message: 'Nice move! Heres the current board. Awaiting opponent move.' }
-      socket.emit('goodmove', outboundPayload)
-
-      let nextMovePayload = { displayBoard: displayBoard(board), message: `Player ${payload.player} has moved. Please enter a number between 1 and 9 to place your marker on the board. ` }
-      socket.broadcast.emit('nextmove', nextMovePayload);
     }
 
-
-
-    /*     delete messageQueue.sent[payload.messageId];
-        messageQueue.received[payload.messageId]; */
   })
 
-  /*   socket.on('getAll', payload => {
-      for(let key in messageQueue.sent){
-        game.emit('message', messageQueue.sent[key]);
-      }
-    })
-  
-    socket.on('pickup', payload => {
-      events.eventPickup(payload);
-      messageQueue.sent[payload.messageId] = payload;
-      game.emit('pickup', payload);
-    })
-    
-    socket.on('in-transit', payload => {
-      events.eventIntransit(payload);
-    }); 
-    
-    
-    socket.on('delivered', payload => {
-      messageQueue.sent[payload.messageId].order.event = 'delivered';
-      events.eventDelivered(payload);
-      game.emit('delivered', payload);
-    });
-  
-    socket.on('subscriber', payload => {
-      console.log(socket.id, `is subscribed to '${payload}'`)
-      if(!subscribers[socket.id].includes(payload)){
-        subscribers[socket.id].push(payload);
-      };
-      console.log(subscribers);
-    }) */
 })
