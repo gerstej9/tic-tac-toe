@@ -27,15 +27,14 @@ socket.on('badmove', payload => {
     name: 'move',
     message: 'Please enter a number (1-9).'
   })
-
-    .then(answer => {
+   .then(answer => {
      payload = { 
        player: player, 
        move: Number(answer.move) 
     }
      socket.emit('move', payload)
      
-  });
+  }).catch(err => console.error(err));
 
 })
 
@@ -52,17 +51,13 @@ socket.on('nextmove', payload => {
     type: 'input',
     name: 'move',
     message: 'Please enter a number (1-9).'
-  })
-
-    .then(answer => {
+  }).then(answer => {
      payload = { 
        player: player, 
        move: Number(answer.move) 
     }
      socket.emit('move', payload)
-     
-  });
-
+  }).catch(err => console.error(err));
 })
 
 socket.on('gameover', payload => {
